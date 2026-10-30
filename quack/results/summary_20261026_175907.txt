@@ -1,0 +1,35 @@
+==============================================================================
+TPC-DS Benchmark Summary Report (harness v3.0.0)
+==============================================================================
+Timestamp:      2026-10-26T17:53:58
+Platform:       Windows-11-10.0.26300-SP0  (AMD64, 4/4 CPUs)
+Python:         3.14.3  (GIL enabled: True)
+DuckDB:         None
+Scale factor:   SF=10 (~10 GB)
+Database:       H:\tpcds\tpcds_sf10.db
+Query set hash: 6178d556ce1dd9abda7da390603b14b5
+Queries/repeat: 99   Repeats: 3   Workers: 1   Warmup: 5
+Result mode:    full
+
+------------------------------------------------------------------------------
+[LOCAL INPROCESS]
+  Executions:   297
+  Success rate: 100.0%
+  Mean:         0.8463s
+  Median:       0.2890s
+  P95:          3.5914s
+  Min / Max:    0.0246s / 15.1723s
+  Std dev:      1.6896s
+  Throughput:   1.18 QPS
+  Total time:   251.34s
+  Slowest queries:
+    Q 67:   15.172s (100 rows)
+    Q 67:   11.087s (100 rows)
+    Q  7:    9.990s (100 rows)
+    Q 23:    8.336s (100 rows)
+    Q 67:    7.129s (100 rows)
+
+------------------------------------------------------------------------------
+Relative to LOCAL INPROCESS (median query time):
+
+==============================================================================

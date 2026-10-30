@@ -1,0 +1,37 @@
+==============================================================================
+TPC-DS Benchmark Summary Report
+==============================================================================
+Timestamp:      2026-10-30T19:27:15
+Platform:       Windows-11-10.0.26300-SP0  (AMD64, 8 physical / 4 logical CPUs)
+Python:         3.14.3  (GIL enabled: True)
+DuckDB:         None
+Scale factor:   SF=10 (~10 GB)
+Database:       H:\tpcds\tpcds_sf10.db
+Query set hash: 6178d556ce1dd9abda7da390603b14b5
+Queries/repeat: 99   Repeats: 1   Workers: 1   Warmup: 5
+Repeat mode:    warm (connection kept open across repeats)
+Threads:        sequential=8  worker=2  memory_limit=24GB
+Result mode:    full
+
+------------------------------------------------------------------------------
+[LOCAL INPROCESS]
+  Executions:   99
+  Success rate: 100.0%
+  Mean:         0.6044s
+  Median:       0.2457s
+  P95:          2.0437s
+  Min / Max:    0.0162s / 8.8748s
+  Std dev:      1.2419s
+  Throughput:   1.65 QPS
+  Total time:   59.83s
+  Slowest queries:
+    Q 67:    8.875s (100 rows)
+    Q 23:    6.461s (100 rows)
+    Q 51:    4.284s (100 rows)
+    Q 78:    3.744s (100 rows)
+    Q 14:    3.082s (100 rows)
+
+------------------------------------------------------------------------------
+Relative to LOCAL INPROCESS (median query time):
+
+==============================================================================

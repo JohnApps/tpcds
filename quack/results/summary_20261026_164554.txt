@@ -1,0 +1,68 @@
+==============================================================================
+TPC-DS Benchmark Summary Report
+==============================================================================
+Timestamp:      2026-10-26T16:45:32
+Platform:       Windows-11-10.0.26300-SP0  (AMD64, 4/4 CPUs)
+Python:         3.14.3  (GIL enabled: True)
+DuckDB:         None
+Scale factor:   SF=10 (~10 GB)
+Database:       H:\tpcds\tpcds_sf10.db
+Query set hash: 6178d556ce1dd9abda7da390603b14b5
+Queries/repeat: 99   Repeats: 3   Workers: 1   Warmup: 5
+Result mode:    full
+
+------------------------------------------------------------------------------
+[LOCAL QUACK]
+  Executions:   297
+  Success rate: 0.0%
+  Mean:         0.0000s
+  Median:       0.0000s
+  P95:          0.0000s
+  Min / Max:    0.0000s / 0.0000s
+  Std dev:      0.0000s
+  Throughput:   0.00 QPS
+  Total time:   0.00s
+  Failures (297):
+    Q  1: [CATALOG] Catalog Error: Table with name store_returns does not exist!
+Did you mean "sqlite_master"?
+
+LINE 5:    FROM st
+    Q  2: [CATALOG] Catalog Error: Table with name web_sales does not exist!
+Did you mean "pg_tables"?
+
+LINE 7:       FROM web_sal
+    Q  3: [CATALOG] Catalog Error: Table with name date_dim does not exist!
+Did you mean "pg_index"?
+
+LINE 5: FROM date_dim dt,
+  
+    Q  4: [CATALOG] Catalog Error: Table with name customer does not exist!
+Did you mean "pg_constraint or sqlite_master"?
+
+LINE 1
+    Q  5: [CATALOG] Catalog Error: Table with name store_sales does not exist!
+Did you mean "sqlite_master"?
+
+LINE 14:       FROM 
+    Q  6: [CATALOG] Catalog Error: Table with name customer_address does not exist!
+Did you mean "sqlite_master"?
+
+LINE 3: FROM cu
+    Q  7: [CATALOG] Catalog Error: Table with name store_sales does not exist!
+Did you mean "sqlite_master"?
+
+LINE 6: FROM store_s
+    Q  8: [CATALOG] Catalog Error: Table with name store_sales does not exist!
+Did you mean "sqlite_master"?
+
+LINE 3: FROM store_s
+    Q  9: [CATALOG] Catalog Error: Table with name reason does not exist!
+Did you mean "pg_prepared_statements"?
+
+LINE 66: FROM re
+    Q 10: [CATALOG] Catalog Error: Table with name customer does not exist!
+Did you mean "pg_constraint or sqlite_master"?
+
+LINE 1
+
+==============================================================================
