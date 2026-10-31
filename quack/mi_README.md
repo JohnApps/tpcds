@@ -16,6 +16,23 @@ Target environment: Windows 11, CPython 3.13 (standard GIL build), DuckDB 2.0.
 
 \---
 
+\## 0. Operating
+
+\- \*\* All three modes, including the remote server
+python cl_tpcds_quack_bench.py --modes local_inprocess,local_quack,remote_quack
+
+\- \*\*Combined with other options, e.g. quick 20-query comparison, 2 repeats
+python cl_tpcds_quack_bench.py --modes local_inprocess,local_quack --queries 20 --repeat 2
+
+\- \*\*Label the run so files from the comparison group together (optimized version)
+python cl_tpcds_quack_bench.py --modes local_inprocess,local_quack --tag inproc-vs-quack
+
+\- \*\*QUACK_TOKEN must be set in your .env — Quack modes abort on validation without it.
+
+\- \*\*The Quack server must be running and reachable at QUACK_HOST:QUACK_PORT (the smoke test checks this before starting).
+
+\- \*\*You can set a default in .env with MODE=local_inprocess — --modes overrides it.
+\- \*\*Alternatively, a single mode can be picked with --mode local_quack.
 
 
 \## 1. Overview
