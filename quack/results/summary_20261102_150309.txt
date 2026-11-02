@@ -1,0 +1,59 @@
+==============================================================================
+TPC-DS Benchmark Summary Report
+==============================================================================
+Timestamp:      2026-11-02T15:00:45
+Platform:       Windows-11-10.0.26300-SP0  (AMD64, 8 physical / 4 logical CPUs)
+Python:         3.14.3  (GIL enabled: True)
+DuckDB:         None
+Scale factor:   SF=10 (~10 GB)
+Database:       H:\tpcds\tpcds_sf10.db
+Query set hash: 6178d556ce1dd9abda7da390603b14b5
+Queries/repeat: 99   Repeats: 1   Workers: 1   Warmup: 5
+Repeat mode:    warm (connection kept open across repeats)
+Threads:        sequential=8  worker=2  memory_limit=24GB
+Result mode:    full
+
+------------------------------------------------------------------------------
+[LOCAL INPROCESS]
+  Executions:   99
+  Success rate: 98.0%
+  Mean:         0.5991s
+  Median:       0.3118s
+  P95:          1.9063s
+  Min / Max:    0.0189s / 7.4727s
+  Std dev:      1.0410s
+  Throughput:   1.67 QPS
+  Total time:   58.12s
+  Slowest queries:
+    Q 23:    7.473s (100 rows)
+    Q 51:    5.247s (100 rows)
+    Q 14:    4.180s (100 rows)
+    Q 22:    2.227s (100 rows)
+    Q  4:    2.187s (100 rows)
+  Failures (2):
+    Q 78: [OOM] Out of Memory Error: Allocation failure
+    Q 67: [OOM] Out of Memory Error: Allocation failure
+
+------------------------------------------------------------------------------
+[LOCAL QUACK]
+  Executions:   99
+  Success rate: 100.0%
+  Mean:         0.6453s
+  Median:       0.3114s
+  P95:          2.3846s
+  Min / Max:    0.0243s / 7.6488s
+  Std dev:      1.0889s
+  Throughput:   1.55 QPS
+  Total time:   63.89s
+  Slowest queries:
+    Q 67:    7.649s (100 rows)
+    Q 23:    5.079s (100 rows)
+    Q 51:    4.547s (100 rows)
+    Q 14:    2.919s (100 rows)
+    Q 78:    2.631s (100 rows)
+
+------------------------------------------------------------------------------
+Relative to LOCAL INPROCESS (median query time):
+  local_quack          1.00x  (faster)
+
+==============================================================================

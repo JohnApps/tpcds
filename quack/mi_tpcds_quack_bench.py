@@ -1,6 +1,5 @@
 # mi_tpcds_quack_bench.py
 # Mistral.ai version
-# cl_tpcds_quack_bench.py
 """
 TPC-DS Benchmark Harness for DuckDB Quack
 Target: Windows 11 / DuckDB 2.0 / CPython 3.13.11 (standard GIL build)
@@ -43,7 +42,12 @@ Environment (.env or OS):
   RESULT_MODE               full | drain | arrow  (how query results are consumed)
   FETCH_CHUNK_ROWS          rows per fetchmany() when RESULT_MODE=drain (default 65536)
   BARRIER_TIMEOUT           seconds to wait for synchronised worker start (default 600)
-  CHART_FORMAT              svg | png  (default svg; the other is the fallback)
+  CHART_FORMAT              png | jpg | svg  (default png; the others are fallbacks)
+  AUTO_THREADS              auto-detect physical cores via psutil (default true)
+  RESERVED_CORES            cores to leave free for other DuckDB clients (default 0)
+  MEMORY_FRACTION           0..1; e.g. 0.7 = 70%% of total RAM as memory_limit (default 0 = off)
+  OOM_RETRIES               retries per query after an OOM allocation failure (default 1)
+  OOM_BACKOFF_SEC           wait before each OOM retry, doubled every retry (default 2.0)
 
 Optimized revision highlights (behaviour-compatible with the original):
   * per-run CSV export (tpcds_runs.csv) for spreadsheet analysis
@@ -84,6 +88,11 @@ try:
 except ImportError:
     np = None
 
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 
 # ============================================================================
 # Console + logging
@@ -122,7 +131,7 @@ BASE_DIR = Path(__file__).resolve().parent
 VALID_MODES = ("local_inprocess", "local_quack", "remote_quack")
 QUACK_MODES = ("local_quack", "remote_quack")
 RESULT_MODES = ("full", "drain", "arrow")
-CHART_FORMATS = ("svg", "png")
+CHART_FORMATS = ("png", "jpg", "svg")
 
 
 @dataclass(slots=True)
@@ -148,6 +157,11 @@ class Config:
     fetch_chunk_rows: int
     barrier_timeout: float
     chart_format: str
+    oom_retries: int
+    oom_backoff_sec: float
+    auto_threads: bool
+    reserved_cores: int
+    memory_fraction: float
 
     def snapshot(self) -> Dict[str, Any]:
         return {
@@ -172,6 +186,11 @@ class Config:
             "fetch_chunk_rows": self.fetch_chunk_rows,
             "barrier_timeout": self.barrier_timeout,
             "chart_format": self.chart_format,
+            "oom_retries": self.oom_retries,
+            "oom_backoff_sec": self.oom_backoff_sec,
+            "auto_threads": self.auto_threads,
+            "reserved_cores": self.reserved_cores,
+            "memory_fraction": self.memory_fraction,
         }
 
 
@@ -187,6 +206,34 @@ def _env_bool(name: str, default: bool) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+
+
+def detect_physical_cores(auto: bool, reserved: int, fallback: int) -> int:
+    """Best-effort physical core count, minus cores reserved for other clients.
+
+    psutil is preferred (real physical cores); without it a logical/2 heuristic
+    is used. 'reserved' cores are subtracted so concurrent DuckDB clients on
+    the same machine do not oversubscribe the CPU.
+    """
+    cores = fallback
+    if auto and psutil is not None:
+        try:
+            cores = (psutil.cpu_count(logical=False)
+                     or psutil.cpu_count(logical=True)
+                     or fallback)
+        except Exception:
+            cores = fallback
+    elif auto:
+        logical = os.cpu_count() or fallback
+        cores = max(1, logical // 2)  # heuristic: physical cores ~ logical / 2
+    return max(1, cores - max(0, reserved))
+
+
 def load_config() -> Config:
     dotenv_path = os.getenv("DOTENV_PATH")
     if dotenv_path:
@@ -194,8 +241,24 @@ def load_config() -> Config:
     else:
         load_dotenv(BASE_DIR / ".env", override=True)
 
-    physical = max(1, int(os.getenv("PHYSICAL_CORES", "8")))
+    physical = detect_physical_cores(
+        auto=_env_bool("AUTO_THREADS", True),
+        reserved=max(0, _env_int("RESERVED_CORES", 0)),
+        fallback=max(1, int(os.getenv("PHYSICAL_CORES", "8"))),
+    )
     query_threads = int(os.getenv("QUERY_THREADS", "0"))
+
+    memory_limit = os.getenv("MEMORY_LIMIT", "").strip()
+    memory_fraction = max(0.0, min(1.0, float(os.getenv("MEMORY_FRACTION", "0"))))
+    if not memory_limit and memory_fraction > 0:
+        if psutil is not None:
+            gb = int(psutil.virtual_memory().total * memory_fraction / (1024 ** 3))
+            memory_limit = f"{gb}GB"
+            LOG.info(f"MEMORY_LIMIT auto-set to {memory_limit} "
+                     f"({memory_fraction:.0%} of total RAM)")
+        else:
+            LOG.warning("MEMORY_FRACTION set but psutil is missing; "
+                        "install with: pip install psutil")
 
     return Config(
         db_path=_env_path("DB_PATH", r"H:\tpcds\tpcds_sf10.db"),
@@ -213,12 +276,17 @@ def load_config() -> Config:
         physical_cores=physical,
         query_threads=query_threads if query_threads > 0 else physical,
         worker_threads=max(1, int(os.getenv("WORKER_THREADS", "1"))),
-        memory_limit=os.getenv("MEMORY_LIMIT", "").strip(),
+        memory_limit=memory_limit,
         preserve_insertion_order=_env_bool("PRESERVE_INSERTION_ORDER", False),
         result_mode=os.getenv("RESULT_MODE", "full").strip().lower(),
         fetch_chunk_rows=max(1, int(os.getenv("FETCH_CHUNK_ROWS", "65536"))),
         barrier_timeout=float(os.getenv("BARRIER_TIMEOUT", "600")),
-        chart_format=os.getenv("CHART_FORMAT", "svg").strip().lower(),
+        chart_format=os.getenv("CHART_FORMAT", "png").strip().lower(),
+        oom_retries=max(0, _env_int("OOM_RETRIES", 1)),
+        oom_backoff_sec=max(0.1, float(os.getenv("OOM_BACKOFF_SEC", "2.0"))),
+        auto_threads=_env_bool("AUTO_THREADS", True),
+        reserved_cores=max(0, _env_int("RESERVED_CORES", 0)),
+        memory_fraction=memory_fraction,
     )
 
 
@@ -285,10 +353,11 @@ def validate_config(cfg: Config, modes: Sequence[str]) -> List[Issue]:
             "warning",
             f"QUERY_THREADS = {cfg.query_threads} exceeds PHYSICAL_CORES = {cfg.physical_cores}",
         ))
-    if not cfg.memory_limit:
+    if not cfg.memory_limit and cfg.memory_fraction <= 0:
         issues.append(Issue(
             "warning",
-            "MEMORY_LIMIT is not set; set it explicitly so runs are reproducible",
+            "MEMORY_LIMIT is not set; set it explicitly (or set MEMORY_FRACTION) "
+            "so runs are reproducible and OOM is less likely with competing clients",
         ))
 
     try:
@@ -637,18 +706,40 @@ def _classify_error(exc: BaseException) -> str:
 def execute_query(con: duckdb.DuckDBPyConnection, query: str, query_nr: int, *,
                   mode: str, cfg: Config, worker_id: Optional[int] = None,
                   repeat: Optional[int] = None) -> QueryOutcome:
-    start = time.perf_counter()
-    try:
-        cur = con.execute(query)
-        row_count = _consume_result(cur, cfg)
-        duration = time.perf_counter() - start
-        return QueryOutcome(query_nr, mode, round(duration, 4), row_count, True,
-                            None, None, worker_id, repeat)
-    except Exception as exc:
-        duration = time.perf_counter() - start
-        settle_result(con)
-        return QueryOutcome(query_nr, mode, round(duration, 4), 0, False,
-                            str(exc)[:500], _classify_error(exc), worker_id, repeat)
+    """Execute one query.
+
+    OOM allocation failures (typically caused by another DuckDB client
+    competing for memory) are retried up to OOM_RETRIES times with
+    exponential backoff. The reported duration covers the last attempt.
+    """
+    attempt = 0
+    while True:
+        attempt += 1
+        start = time.perf_counter()
+        try:
+            cur = con.execute(query)
+            row_count = _consume_result(cur, cfg)
+            duration = time.perf_counter() - start
+            if attempt > 1:
+                LOG.info(f"Q{query_nr}: succeeded on attempt {attempt} after OOM retry")
+            return QueryOutcome(query_nr, mode, round(duration, 4), row_count, True,
+                                None, None, worker_id, repeat)
+        except Exception as exc:
+            duration = time.perf_counter() - start
+            error_class = _classify_error(exc)
+            if error_class == "OOM" and attempt <= cfg.oom_retries:
+                backoff = cfg.oom_backoff_sec * (2 ** (attempt - 1))
+                LOG.warning(
+                    f"Q{query_nr}: OOM allocation failure on attempt {attempt} "
+                    f"({str(exc)[:120]}); retrying in {backoff:.1f}s - if this "
+                    f"persists, lower WORKER_THREADS/MEMORY_FRACTION or wait "
+                    f"for the competing client to finish")
+                settle_result(con)
+                time.sleep(backoff)
+                continue
+            settle_result(con)
+            return QueryOutcome(query_nr, mode, round(duration, 4), 0, False,
+                                str(exc)[:500], error_class, worker_id, repeat)
 
 
 def warmup_database(con: duckdb.DuckDBPyConnection, queries: Sequence[str],
@@ -659,8 +750,7 @@ def warmup_database(con: duckdb.DuckDBPyConnection, queries: Sequence[str],
     for i in range(count):
         outcome = execute_query(con, queries[i], i + 1, mode=mode, cfg=cfg)
         if not outcome.success:
-            LOG.warning(f"Warmup query {i + 1} failed: {outcome.error_class}: "
-                f"{(outcome.error or '')[:200]}")
+            LOG.warning(f"Warmup query {i + 1} failed: {outcome.error_class}")
     return count
 
 
@@ -680,8 +770,6 @@ def run_queries_sequential(cfg: Config, queries: Sequence[str],
             outcomes: List[QueryOutcome] = []
             for i, query in enumerate(queries, 1):
                 outcome = execute_query(con, query, i, mode=mode, cfg=cfg, repeat=repeat)
-                if not outcome.success:
-                    LOG.error(f"Q{i} [{outcome.error_class}] {(outcome.error or '')[:300]}")
                 outcomes.append(outcome)
                 if i % 10 == 0 or i == total_queries:
                     mark = "OK  " if outcome.success else "FAIL"
@@ -967,6 +1055,14 @@ def generate_summary_report(cfg: Config, all_results: Dict[str, List[List[QueryO
                 err_msg = str(row.get("error", ""))[:110]
                 lines.append(f"    Q{row['query_nr']:3d}: [{row.get('error_class')}] {err_msg}")
 
+        oom = [r for r in bad if r.get("error_class") == "OOM"]
+        if oom:
+            oom_queries = sorted({r["query_nr"] for r in oom})
+            lines.append(f"  OOM failures:  {len(oom)} "
+                         f"(queries: {oom_queries[:20]})")
+            lines.append("                 lower WORKER_THREADS / MEMORY_FRACTION, "
+                         "or run when other DuckDB clients are idle")
+
     baseline = per_mode_stats.get("local_inprocess")
     if baseline and baseline.get("successful"):
         lines.append("")
@@ -1073,17 +1169,20 @@ def plot_comparison(cfg: Config, modes: Sequence[str],
     suffix = f"_{run_label}" if run_label else ""
     out_stem = cfg.results_dir / f"comparison{suffix}_{stamp}"
 
-    preferred = cfg.chart_format if cfg.chart_format in CHART_FORMATS else "svg"
+    preferred = cfg.chart_format if cfg.chart_format in CHART_FORMATS else "png"
     order = [preferred] + [f for f in CHART_FORMATS if f != preferred]
 
     out_path: Optional[Path] = None
     for fmt in order:
         candidate = out_stem.with_suffix(f".{fmt}")
         try:
-            if fmt == "png":
-                fig.savefig(candidate, dpi=100, bbox_inches="tight")
-            else:
+            if fmt == "svg":
                 fig.savefig(candidate, bbox_inches="tight")
+            else:
+                # Raster output (png/jpg). JPG requires Pillow; if it is
+                # missing, the loop falls through to the next format.
+                fig.savefig(candidate, dpi=100, bbox_inches="tight",
+                            pil_kwargs={"quality": 95} if fmt in ("jpg", "jpeg") else None)
             if candidate.exists() and candidate.stat().st_size > 0:
                 out_path = candidate
                 LOG.info(f"Saved {fmt.upper()}: {out_path} ({out_path.stat().st_size:,} bytes)")
@@ -1094,7 +1193,7 @@ def plot_comparison(cfg: Config, modes: Sequence[str],
     plt.close(fig)
 
     if out_path is None:
-        LOG.error("PLOTS FAILED: neither SVG nor PNG could be written")
+        LOG.error("PLOTS FAILED: no chart format (png/jpg/svg) could be written")
         return None
 
     LOG.info(f"Comparison chart saved to {out_path}")

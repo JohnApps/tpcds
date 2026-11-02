@@ -1,0 +1,34 @@
+==============================================================================
+TPC-DS Benchmark Summary Report
+==============================================================================
+Timestamp:      2026-11-02T17:26:43
+Platform:       Windows-11-10.0.26300-SP0  (AMD64, 2 physical / 4 logical CPUs)
+Python:         3.14.3  (GIL enabled: True)
+DuckDB:         None
+Scale factor:   SF=10 (~10 GB)
+Database:       H:\tpcds\tpcds_sf10.db
+Query set hash: 6178d556ce1dd9abda7da390603b14b5
+Queries/repeat: 99   Repeats: 1   Workers: 1   Warmup: 5
+Repeat mode:    warm (connection kept open across repeats)
+Threads:        sequential=2  worker=2  memory_limit=24GB
+Result mode:    full
+
+------------------------------------------------------------------------------
+[LOCAL QUACK]
+  Executions:   99
+  Success rate: 100.0%
+  Mean:         0.7108s
+  Median:       0.3190s
+  P95:          2.5022s
+  Min / Max:    0.0146s / 8.0604s
+  Std dev:      1.2816s
+  Throughput:   1.41 QPS
+  Total time:   70.37s
+  Slowest queries:
+    Q 67:    8.060s (100 rows)
+    Q 23:    7.169s (100 rows)
+    Q 51:    5.151s (100 rows)
+    Q 14:    3.551s (100 rows)
+    Q 78:    3.360s (100 rows)
+
+==============================================================================

@@ -1,0 +1,56 @@
+==============================================================================
+TPC-DS Benchmark Summary Report
+==============================================================================
+Timestamp:      2026-11-02T14:50:51
+Platform:       Windows-11-10.0.26300-SP0  (AMD64, 8 physical / 4 logical CPUs)
+Python:         3.14.3  (GIL enabled: True)
+DuckDB:         None
+Scale factor:   SF=10 (~10 GB)
+Database:       H:\tpcds\tpcds_sf10.db
+Query set hash: 6178d556ce1dd9abda7da390603b14b5
+Queries/repeat: 99   Repeats: 1   Workers: 1   Warmup: 5
+Repeat mode:    warm (connection kept open across repeats)
+Threads:        sequential=8  worker=2  memory_limit=24GB
+Result mode:    full
+
+------------------------------------------------------------------------------
+[LOCAL INPROCESS]
+  Executions:   99
+  Success rate: 100.0%
+  Mean:         0.7581s
+  Median:       0.3172s
+  P95:          2.8320s
+  Min / Max:    0.0209s / 10.3181s
+  Std dev:      1.4793s
+  Throughput:   1.32 QPS
+  Total time:   75.05s
+  Slowest queries:
+    Q 67:   10.318s (100 rows)
+    Q 23:    7.237s (100 rows)
+    Q 14:    4.822s (100 rows)
+    Q 51:    4.785s (100 rows)
+    Q 78:    4.720s (100 rows)
+
+------------------------------------------------------------------------------
+[LOCAL QUACK]
+  Executions:   99
+  Success rate: 100.0%
+  Mean:         0.8663s
+  Median:       0.4064s
+  P95:          3.1912s
+  Min / Max:    0.0408s / 7.7178s
+  Std dev:      1.3372s
+  Throughput:   1.15 QPS
+  Total time:   85.76s
+  Slowest queries:
+    Q 67:    7.718s (100 rows)
+    Q  7:    7.213s (100 rows)
+    Q 23:    5.246s (100 rows)
+    Q 14:    4.367s (100 rows)
+    Q 51:    4.129s (100 rows)
+
+------------------------------------------------------------------------------
+Relative to LOCAL INPROCESS (median query time):
+  local_quack          1.28x  (slower)
+
+==============================================================================

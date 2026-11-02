@@ -1,0 +1,69 @@
+==============================================================================
+TPC-DS Benchmark Summary Report
+==============================================================================
+Timestamp:      2026-11-02T15:03:13
+Platform:       Windows-11-10.0.26300-SP0  (AMD64, 8 physical / 4 logical CPUs)
+Python:         3.14.3  (GIL enabled: True)
+DuckDB:         None
+Scale factor:   SF=10 (~10 GB)
+Database:       H:\tpcds\tpcds_sf10.db
+Query set hash: 6178d556ce1dd9abda7da390603b14b5
+Queries/repeat: 99   Repeats: 1   Workers: 1   Warmup: 5
+Repeat mode:    warm (connection kept open across repeats)
+Threads:        sequential=8  worker=2  memory_limit=24GB
+Result mode:    full
+
+------------------------------------------------------------------------------
+[LOCAL INPROCESS]
+  Executions:   99
+  Success rate: 75.8%
+  Mean:         0.8209s
+  Median:       0.4253s
+  P95:          2.7284s
+  Min / Max:    0.0275s / 6.0389s
+  Std dev:      1.0622s
+  Throughput:   1.22 QPS
+  Total time:   61.57s
+  Slowest queries:
+    Q 14:    6.039s (100 rows)
+    Q 22:    4.183s (100 rows)
+    Q 72:    3.841s (100 rows)
+    Q 28:    3.135s (1 rows)
+    Q  4:    2.554s (100 rows)
+  Failures (24):
+    Q 97: [OOM] Out of Memory Error: Allocation failure
+    Q 95: [OOM] Out of Memory Error: Allocation failure
+    Q 94: [OOM] Out of Memory Error: Allocation failure
+    Q 93: [OOM] Out of Memory Error: Allocation failure
+    Q 91: [OOM] Out of Memory Error: Allocation failure
+    Q 87: [OOM] Out of Memory Error: Allocation failure
+    Q 86: [OOM] Out of Memory Error: Allocation failure
+    Q 85: [OOM] Out of Memory Error: Allocation failure
+    Q 83: [OOM] Out of Memory Error: Allocation failure
+    Q 82: [OOM] Out of Memory Error: Allocation failure
+
+------------------------------------------------------------------------------
+[LOCAL QUACK]
+  Executions:   99
+  Success rate: 99.0%
+  Mean:         1.0286s
+  Median:       0.4837s
+  P95:          3.4206s
+  Min / Max:    0.0373s / 8.8144s
+  Std dev:      1.5436s
+  Throughput:   0.97 QPS
+  Total time:   100.81s
+  Slowest queries:
+    Q 67:    8.814s (100 rows)
+    Q 78:    7.875s (100 rows)
+    Q 51:    7.532s (100 rows)
+    Q 14:    5.294s (100 rows)
+    Q 22:    4.689s (100 rows)
+  Failures (1):
+    Q 23: [OOM] Out of Memory Error: Allocation failure
+
+------------------------------------------------------------------------------
+Relative to LOCAL INPROCESS (median query time):
+  local_quack          1.14x  (slower)
+
+==============================================================================

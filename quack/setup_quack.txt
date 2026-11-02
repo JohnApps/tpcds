@@ -1,0 +1,95 @@
+-- setup_quack.txt
+--
+-- instructions written by mistral.ai
+--
+-- Windows Firewall (one-time, admin PowerShell on each server node):
+----------- Perform this in a PowerShell window
+--
+ New-NetFirewallRule -DisplayName "DuckDB Quack 9494" 
+-Direction Inbound -Protocol TCP -LocalPort 9494 -Action Allow
+--
+-- ============= Server-side commands ==================
+--
+--As a one-liner to keep the server running in a console window:
+--
+duckdb H:\tpcds\tpcds_sf10.db -c "INSTALL quack; LOAD quack; 
+SELECT * FROM quack_serve('quack:0.0.0.0:9494', 
+    allow_other_hostname := true, disable_ssl := true, 
+    token := 'super_secret');"
+--
+-- 
+-- In a DuckDB CLI console on winniesacerpc (and identically on mini if it also serves):
+--
+INSTALL quack;
+LOAD quack;
+
+-- Bind on all interfaces, plain HTTP (no SSL), fixed token
+SELECT * FROM quack_serve(
+    'quack:0.0.0.0:9494',
+    allow_other_hostname := true,   -- required to bind 0.0.0.0
+    disable_ssl := true,            -- plain HTTP, no certificates
+    token := 'super_secret'   -- min 4 chars; keep identical on both nodes
+);
+
+
+-- ============================= Client-side =====================
+-- Client side (the benchmark harness, on the other node)
+-- .env on the client node (e.g. mini benchmarking against winniesacerpc):
+--
+QUACK_HOST=winniesacerpc
+QUACK_PORT=9494
+QUACK_TOKEN=super_secret
+MODE=remote_quack
+
+--
+python cl_tpcds_quack_bench.py --modes remote_quack
+--
+-- ==========  Comparing both nodes against each other =========
+-- On mini: QUACK_HOST=winniesacerpc 
+--  python cl_tpcds_quack_bench.py --modes local_inprocess,remote_quack --tag from-mini
+--
+-- On winniesacerpc: QUACK_HOST=mini → 
+--
+--  python cl_tpcds_quack_bench.py --modes local_inprocess,remote_quack --tag from-winniesacerpc
+
+-- =========== End of mistral.ai instructions ================
+--
+
+-- Server on MINI
+--
+> DuckDB H:\duckdb_quack\quack_files.DuckDB
+
+load quack;
+
+attach 'H:\tpcds\tpcds_sf10.db' (read_only);
+
+CALL quack_serve('quack:localhost', token = 'super_secret',
+    allow_other_hostname='true', disable_ssl = 'true');
+--
+-- Use this when the clients are attaching to the listen_uri server
+--
+CALL quack_serve(token = 'super_secret',
+    allow_other_hostname='true', disable_ssl = 'true',
+    listen_uri = 'quack:winniesacerpc');
+
+--+
+-- Client on WINNIESACERPC
+---
+> DuckDB
+
+load quack;
+--
+-- No secret needed when the client provides it in the attach statement
+--
+CREATE SECRET (TYPE quack,TOKEN 'super_secret');
+
+
+-- SET table_function_identifier_conversion='ENABLE_IMPLICIT_STRING';
+
+
+ATTACH ('quack:localhost', disable_ssl='True', token = 'super_secret') AS remote;
+--
+-- use this when the server has been started with listen_uri
+--
+ATTACH ('quack:winniesacerpc', disable_ssl='True', token = 'super_secret') AS remote1;
+

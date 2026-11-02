@@ -1,0 +1,58 @@
+==============================================================================
+TPC-DS Benchmark Summary Report
+==============================================================================
+Timestamp:      2026-11-02T15:18:54
+Platform:       Windows-11-10.0.26300-SP0  (AMD64, 8 physical / 4 logical CPUs)
+Python:         3.14.3  (GIL enabled: True)
+DuckDB:         None
+Scale factor:   SF=10 (~10 GB)
+Database:       H:\tpcds\tpcds_sf10.db
+Query set hash: 6178d556ce1dd9abda7da390603b14b5
+Queries/repeat: 99   Repeats: 1   Workers: 1   Warmup: 5
+Repeat mode:    warm (connection kept open across repeats)
+Threads:        sequential=4  worker=2  memory_limit=16GB
+Result mode:    full
+
+------------------------------------------------------------------------------
+[LOCAL INPROCESS]
+  Executions:   99
+  Success rate: 99.0%
+  Mean:         1.2232s
+  Median:       0.5415s
+  P95:          5.1452s
+  Min / Max:    0.0421s / 10.1456s
+  Std dev:      1.8473s
+  Throughput:   0.82 QPS
+  Total time:   119.88s
+  Slowest queries:
+    Q 23:   10.146s (100 rows)
+    Q  7:    9.085s (100 rows)
+    Q 14:    8.112s (100 rows)
+    Q 51:    6.590s (100 rows)
+    Q 78:    5.184s (100 rows)
+  Failures (1):
+    Q 67: [OOM] Out of Memory Error: Allocation failure
+
+------------------------------------------------------------------------------
+[LOCAL QUACK]
+  Executions:   99
+  Success rate: 100.0%
+  Mean:         1.0599s
+  Median:       0.4718s
+  P95:          3.7486s
+  Min / Max:    0.0373s / 10.2696s
+  Std dev:      1.6626s
+  Throughput:   0.94 QPS
+  Total time:   104.93s
+  Slowest queries:
+    Q 67:   10.270s (100 rows)
+    Q 23:   10.100s (100 rows)
+    Q 51:    5.699s (100 rows)
+    Q 14:    5.066s (100 rows)
+    Q 78:    4.170s (100 rows)
+
+------------------------------------------------------------------------------
+Relative to LOCAL INPROCESS (median query time):
+  local_quack          0.87x  (faster)
+
+==============================================================================
